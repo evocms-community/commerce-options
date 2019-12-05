@@ -34,7 +34,7 @@ class CommerceOptions
         $this->tableGroupValues   = $modx->getFullTablename('commerce_tvo_group_values');
 
         $this->lexicon = new Lexicon($modx, [
-            'langDir' => 'assets/plugins/commerceoptions/lang/',
+            'langDir' => 'assets/plugins/commerce-options/lang/',
             'lang'    => $modx->getConfig('manager_language'),
         ]);
     }
@@ -892,7 +892,7 @@ class CommerceOptions
             $out = [];
         }
 
-        $modx->regClientScript(MODX_BASE_URL . 'assets/plugins/commerceoptions/js/front.js?' . self::VERSION);
+        $modx->regClientScript(MODX_BASE_URL . 'assets/plugins/commerce-options/js/front.js?' . self::VERSION);
         $modx->regClientScript('<script type="text/javascript">
             var _tvco = ' . json_encode($json, JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK) . ';
         </script>');

@@ -18,7 +18,7 @@
     <td style="text-align: right; white-space: nowrap;">
         <select class="form-control" name="tvco[<?= $tv['id'] ?>][<?= $num ?>][modifier]" size="1" data-initial-value="<?= $row['modifier'] ?>">
             <?php foreach ($modifiers as $modifier): ?>
-                <option value="<?= $modifier ?>"<?= $modifier == $row['modifier'] ? ' selected' : '' ?>><?= $lang['common.modifier_' . $modifier] ?></option>
+                <option value="<?= $modifier ?>"<?= $modifier == $row['modifier'] ? ' selected' : '' ?>><?= $lang['tvco.modifier_' . $modifier] ?></option>
             <?php endforeach; ?>
         </select>
 

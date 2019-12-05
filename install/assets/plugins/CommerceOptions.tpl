@@ -15,7 +15,7 @@
 switch ($modx->event->name) {
     case 'OnInitializeCommerce': {
         ci()->set('optionsProcessor', function($ci) use ($params) {
-            require_once MODX_BASE_PATH . 'assets/plugins/commercetvoptions/src/CommerceOptions.php';
+            require_once MODX_BASE_PATH . 'assets/plugins/commerce-options/src/CommerceOptions.php';
             return new CommerceOptions($params);
         });
         break;

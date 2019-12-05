@@ -7,7 +7,7 @@
         <div class="value-image form-cell">
             <div class="preview"></div>
             <input type="text" class="form-control" name="tvo_values[<?= $iteration ?>][image]" value="<?= htmlentities($row['image']) ?>">
-            <button type="button" class="btn btn-seconday show-browser"><?= $lang['common.select_image'] ?></button>
+            <button type="button" class="btn btn-seconday show-browser"><?= $lang['tvco.select_image'] ?></button>
         </div>
     </td>
 
@@ -22,7 +22,7 @@
     <td style="text-align: right; white-space: nowrap;">
         <select class="form-control" name="tvo_values[<?= $iteration ?>][modifier]" size="1">
             <?php foreach ($modifiers as $modifier): ?>
-                <option value="<?= $modifier ?>"<?= $modifier == $row['modifier'] ? ' selected' : '' ?>><?= $lang['common.modifier_' . $modifier] ?></option>
+                <option value="<?= $modifier ?>"<?= $modifier == $row['modifier'] ? ' selected' : '' ?>><?= $lang['tvco.modifier_' . $modifier] ?></option>
             <?php endforeach; ?>
         </select>
 

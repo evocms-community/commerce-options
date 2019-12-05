@@ -19,8 +19,8 @@
         values: {},
         modifiers: <?= json_encode($modifiers) ?>,
         lang: {
-            add_value: '<?= $lang['common.add_value'] ?>',
-            add_all_values: '<?= $lang['common.add_all_values'] ?>'
+            add_value: '<?= $lang['tvco.add_value'] ?>',
+            add_all_values: '<?= $lang['tvco.add_all_values'] ?>'
         }
     };
 </script>

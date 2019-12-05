@@ -61,10 +61,10 @@
         </table>
     </div>
 
-    <link rel="stylesheet" href="../assets/plugins/commerceoptions/css/tv.css?<?= $version ?>">
-    <script src="../assets/plugins/commerceoptions/js/jquery-ui.min.js"></script>
-    <script src="../assets/plugins/commerceoptions/js/common.js?<?= $version ?>"></script>
-    <script src="../assets/plugins/commerceoptions/js/product.js?<?= $version ?>"></script>
+    <link rel="stylesheet" href="../assets/plugins/commerce-options/css/tv.css?<?= $version ?>">
+    <script src="../assets/plugins/commerce-options/js/jquery-ui.min.js"></script>
+    <script src="../assets/plugins/commerce-options/js/common.js?<?= $version ?>"></script>
+    <script src="../assets/plugins/commerce-options/js/product.js?<?= $version ?>"></script>
 
     <script>
         var _tvco = {};
