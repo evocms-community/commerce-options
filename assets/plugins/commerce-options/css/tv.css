@@ -1,0 +1,27 @@
+.tmplvar-values { background: #fff; }
+.table.tmplvar-values td { vertical-align: middle; }
+.table.data.tmplvar-values > tbody > tr { background: #fff !important; transition: none; }
+.tmplvar-values .value-image { white-space: nowrap; }
+.tmplvar-values .value-image .preview { width: 80px; height: 50px; display: inline-block; background-color: #ddd; background-position: center; background-repeat: no-repeat; background-size: contain; vertical-align: middle; }
+.tmplvar-values .value-image input { width: auto; }
+.tmplvar-values .move-handler { cursor: move; }
+.tmplvar-values .delete-tmplvar-value { color: #c30404; font-size: 130%; }
+
+.tvco-container .available-values { width: auto; display: inline-block; min-width: 150px; }
+.tvco-container .remove-value { color: #c30404; font-size: 130%; }
+
+.tvco-relations .items-container { border: 2px dashed #ccc; margin: 0 0 0.75rem; }
+.tvco-relations .items-container select { float: left; width: auto; margin: 0.125rem 0; }
+.tvco-relations .items-container .values:after { content: ''; display: table; clear: both; }
+.tvco-relations .items-container .value-item { float: left; background: #fff; border: 1px solid #ccc; padding: 0 0.5rem 0 0; white-space: nowrap; height: 2.3076923em; line-height: calc(2.3076923em - 2px); border-radius: 2px; margin: 0.125rem 0.25rem 0.125rem 0; }
+.tvco-relations .items-container .value-item a { display: inline-block; border-right: 1px solid #ccc; float: left; width: 2em; text-align: center; color: #ccc; }
+.tvco-relations .items-container .value-item span { margin-left: 0.5rem; }
+.tvco-relations .items-container .value-item:hover a { color: #333; }
+.tvco-relations .children-container { border: 2px dashed #ccc; margin: 0.75rem 0 0 2rem; position: relative; }
+.tvco-relations .children-container:before { content: ''; position: absolute; left: -1.25rem; top: -1rem; border: 1px solid #ccc; border-width: 0 0 1px 1px; width: 1.25rem; height: 2rem; }
+.tvco-relations .relation-item { padding: 0.75rem; }
+.tvco-relations .relation-item + .relation-item { margin-top: 0.75rem; border-top: 2px dashed #ccc; padding-top: 1rem; }
+.tvco-relations .relation-item.cannot-divide > .values > .value-item > .detach-value, .tvco-relations .relation-item.last > .values > .value-item > .detach-value { display: none !important; }
+.tvco-relations .relation-item.last .items-container { display: none !important; }
+
+
