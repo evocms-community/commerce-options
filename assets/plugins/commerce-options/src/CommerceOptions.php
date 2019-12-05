@@ -162,7 +162,7 @@ class CommerceOptions
         }
 
         $output = $view->render('tv_tab.tpl', [
-            'lang'      => $this->lexicon->loadLang(['common', 'tv']),
+            'lang'      => $this->lexicon->loadLang(['tvco']),
             'version'   => self::VERSION,
             'modifiers' => array_keys($this->modifiers),
             'outputs'   => $this->outputs,
@@ -366,7 +366,7 @@ class CommerceOptions
         $modx = ci()->modx;
         $db   = $modx->db;
         $view = $this->getRenderer();
-        $lang = $this->lexicon->loadLang(['common', 'tv']);
+        $lang = $this->lexicon->loadLang(['tvco']);
 
         $raw = $this->getTmplvars($params['template']);
 
@@ -444,7 +444,7 @@ class CommerceOptions
         $modx = ci()->modx;
         $db   = $modx->db;
         $view = $this->getRenderer();
-        $lang = $this->lexicon->loadLang(['common', 'tv']);
+        $lang = $this->lexicon->loadLang(['tvco']);
 
         $tmplvar_id = intval($params['row']['id']);
         $values = $db->makeArray($db->select('*', $this->tableValues, "`tmplvar_id` = '$tmplvar_id'", "`sort`"), 'id');

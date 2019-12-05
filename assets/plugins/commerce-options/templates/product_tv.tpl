@@ -5,10 +5,10 @@
     <table class="table tvco-values empty">
         <thead>
             <tr>
-                <td colspan="2"><?= $lang['common.name'] ?></td>
-                <td style="width: 1%; text-align: center;"><?= $lang['common.selected'] ?></td>
-                <td style="width: 1%; text-align: right;"><?= $lang['common.option_price_modifier'] ?></td>
-                <td style="width: 1%; text-align: right;"><?= $lang['common.count_title'] ?></td>
+                <td colspan="2"><?= $lang['tvco.name'] ?></td>
+                <td style="width: 1%; text-align: center;"><?= $lang['tvco.selected'] ?></td>
+                <td style="width: 1%; text-align: right;"><?= $lang['tvco.option_price_modifier'] ?></td>
+                <td style="width: 1%; text-align: right;"><?= $lang['tvco.count_title'] ?></td>
                 <td style="width: 1%;"></td>
             </tr>
         </thead>
@@ -17,14 +17,14 @@
             <tr>
                 <td colspan="6">
                     <select class="available-values">
-                        <option value=""><?= $lang['common.add_value'] ?></option>
-                        <option value="all"><?= $lang['common.add_all_values'] ?></option>
+                        <option value=""><?= $lang['tvco.add_value'] ?></option>
+                        <option value="all"><?= $lang['tvco.add_all_values'] ?></option>
                         <?php foreach ($values as $valuerow): ?>
                             <option value="<?= $valuerow['id'] ?>"><?= $valuerow['title'] ?></option>
                         <?php endforeach; ?>
                     </select>
 
-                    <a href="#" class="btn btn-secondary clear-values"><?= $lang['tv.clear_btn'] ?></a>
+                    <a href="#" class="btn btn-secondary clear-values"><?= $lang['tvco.clear_btn'] ?></a>
                 </td>
             </tr>
         </tfoot>
@@ -46,12 +46,12 @@
 
 <?php if ($init): ?>
     <div class="tab-page" id="tabCommerceOptions">
-        <h2 class="tab"><?= $lang['common.product_options'] ?></h2>
+        <h2 class="tab"><?= $lang['tvco.product_options'] ?></h2>
         <table>
             <tbody>
                 <tr class="tvco-relations-wrap">
                     <td>
-                        <span class="warning"><?= $lang['common.options_relations'] ?></span>
+                        <span class="warning"><?= $lang['tvco.options_relations'] ?></span>
                     </td>
                     <td>
                         <div style="position: relative;"></div>
