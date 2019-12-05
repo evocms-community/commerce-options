@@ -431,7 +431,7 @@ var tvcoRelations;
             $('.tvco-container').each(function() {
                 var $row = $(this).closest('tr'),
                     $next = $row.next('tr');
-                $row.append($next).insertBefore($relations);
+                $row.add($next).insertBefore($relations);
                 (new tvco(this)).init();
             });
         };
