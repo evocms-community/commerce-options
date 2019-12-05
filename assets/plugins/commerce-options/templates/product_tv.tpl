@@ -2,7 +2,7 @@
     <input type="hidden" name="tv<?= $row['id'] ?>" id="tv<?= $row['id'] ?>" value="<?= htmlentities($row['value']) ?>">
     <input type="hidden" name="tvco[<?= $row['id'] ?>]" value="">
 
-    <table class="table tvco-values">
+    <table class="table tvco-values empty">
         <thead>
             <tr>
                 <td colspan="2"><?= $lang['common.name'] ?></td>
@@ -15,7 +15,7 @@
 
         <tfoot>
             <tr>
-                <td colspan="5" style="padding: 10px 0 0;">
+                <td colspan="6">
                     <select class="available-values">
                         <option value=""><?= $lang['common.add_value'] ?></option>
                         <option value="all"><?= $lang['common.add_all_values'] ?></option>

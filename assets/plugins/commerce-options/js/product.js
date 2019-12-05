@@ -77,6 +77,7 @@ var tvcoRelations;
                 this.$values.val('');
                 this.$hidden.val(ids.join('||'));
                 this.updateProductValues();
+                this.$table.parent().toggleClass('empty', !this.$table.children().length);
                 window.tvcoRelations.updateState(null, this.tv_id);
             },
 

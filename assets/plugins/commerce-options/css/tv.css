@@ -7,6 +7,9 @@
 .tmplvar-values .move-handler { cursor: move; }
 .tmplvar-values .delete-tmplvar-value { color: #c30404; font-size: 130%; }
 
+.tvco-container .tvco-values tfoot td { padding: 10px 0 0; }
+.tvco-container .tvco-values.empty thead { display: none; }
+.tvco-container .tvco-values.empty tfoot td { padding: 0; border: 0; }
 .tvco-container .available-values { width: auto; display: inline-block; min-width: 150px; }
 .tvco-container .remove-value { color: #c30404; font-size: 130%; }
 
