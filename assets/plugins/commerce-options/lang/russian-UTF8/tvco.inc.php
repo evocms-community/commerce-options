@@ -11,6 +11,7 @@ return [
     'tvco.modifier_multiply' => 'Умножить',
     'tvco.modifier_replace' => 'Равно',
     'tvco.image' => 'Изображение',
+    'tvco.select_image' => 'Выбрать',
     'tvco.add_value' => '-- Добавить значение --',
     'tvco.add_all_values' => '-- Добавить все значения --',
     'tvco.sort_title' => 'Сортировка',
