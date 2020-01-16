@@ -92,7 +92,7 @@ class CommerceOptions
             });
 
             $doc = $modx->getDocument($params['item']['id'], 'id,template', 'all');
-            
+
             $tableTmplvars  = $modx->getFullTablename('site_tmplvars');
             $tableTemplates = $modx->getFullTablename('site_tmplvar_templates');
 
@@ -131,7 +131,6 @@ class CommerceOptions
     }
 
     /**
-     * Called at OnManagerBeforeDefaultCurrencyChange event.
      * When manager changes the default currency, we recalculate all modifiers
      */
     public function OnManagerBeforeDefaultCurrencyChange($params)
@@ -153,7 +152,6 @@ class CommerceOptions
     {
         $modx = ci()->modx;
         $db   = $modx->db;
-        $view = $this->getRenderer();
 
         $values = $extra = [];
         if (!empty($params['id'])) {
@@ -161,13 +159,41 @@ class CommerceOptions
             $extra  = $db->getRow($db->select('*', $this->tableExtra, "`tmplvar_id` = '" . $params['id'] . "'"));
         }
 
+        $columns = $this->getTmplvarColumns();
+
+        $modx->invokeEvent('OnManagerBeforeTmplvarValuesRender', [
+            'params'  => &$params,
+            'columns' => &$columns,
+        ]);
+
+        $columns = $this->sortFields($columns);
+
+        foreach ($values as $i => $row) {
+            $row['fields'] = json_decode($row['fields'], true);
+            $row['meta']   = json_decode($row['meta'], true);
+            $values[$i]['cells'] = $this->processFields($columns, ['data' => array_merge(['iteration' => $i], $row)]);
+        }
+
+        $blank = [
+            'iteration' => '{%iteration%}',
+            'sort'      => '{%sort%}',
+        ];
+
+        $blank = array_merge($blank, [
+            'cells' => $this->processFields($columns, ['data' => $blank]),
+        ]);
+
+        $view = $this->getRenderer();
+
         $output = $view->render('tv_tab.tpl', [
             'lang'      => $this->lexicon->loadLang(['tvco']),
             'version'   => self::VERSION,
             'modifiers' => array_keys($this->modifiers),
             'outputs'   => $this->outputs,
+            'columns'   => $columns,
             'values'    => $values,
             'extra'     => $extra,
+            'blank'     => $blank,
         ]);
 
         $modx->event->setOutput($output);
@@ -208,21 +234,47 @@ class CommerceOptions
         $exists = $db->makeArray($db->select('*', $table, "`tmplvar_id` = '" . $params['id'] . "'"), 'id');
 
         if (!empty($_POST['tvo_values'])) {
-            $values = $_POST['tvo_values'];
-            $sort   = 0;
+            $columns = $this->getTmplvarColumns();
+            $values  = $_POST['tvo_values'];
 
-            uasort($values, function($a, $b) {
-                return $a['sort'] - $b['sort'];
-            });
+            $rules = [];
+
+            foreach ($columns as $name => $column) {
+                if (isset($column['save'])) {
+                    $rules[$name] = $column['save'];
+                }
+            }
+
+            $modx->invokeEvent('OnManagerBeforeTmplvarValuesSave', [
+                'params'  => &$params,
+                'rules'   => &$rules,
+                'values'  => &$values,
+            ]);
+
+            $values = $this->sortFields($values);
+
+            $sort = 0;
 
             foreach ($values as $row) {
-                $data = [
-                    'title'    => $db->escape($row['title']),
-                    'image'    => $db->escape($row['image']),
-                    'modifier' => $db->escape($row['modifier']),
-                    'amount'   => floatval($row['amount']),
-                    'sort'     => $sort,
-                ];
+                $data = [];
+
+                foreach ($rules as $name => $rule) {
+                    if (is_callable($rule)) {
+                        $result = call_user_func_array($rule, ['data' => $row]);
+
+                        if (is_array($result) && !empty($result)) {
+                            $data = array_merge_recursive($data, $result);
+                        }
+                    }
+                }
+
+                foreach (['fields', 'meta'] as $field) {
+                    if (!empty($data[$field])) {
+                        $data[$field] = json_encode($data[$field], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
+                    } else {
+                        $data[$field] = '';
+                    }
+                }
 
                 if (!empty($row['id']) && isset($exists[$row['id']])) {
                     $db->update($data, $table, "`id` = '" . intval($row['id']) . "'");
@@ -236,6 +288,11 @@ class CommerceOptions
 
                 $sort += 10;
             }
+        } else {
+            $where = "`tmplvar_id` = '" . intval($params['id']) . "'";
+            $db->delete($this->tableProductValues, $where);
+            $db->delete($this->tableGroupValues, $where);
+            $db->delete($this->tableValues, $where);
         }
 
         if (!empty($exists)) {
@@ -748,7 +805,7 @@ class CommerceOptions
         $template_id = $product['template'];
         $tmplvars    = $this->getTmplvars($template_id);
 
-        $query = $db->query("SELECT pv.id, pv.tmplvar_id, value_id, v.title, v.image, pv.modifier, pv.amount, v.fields, pv.selected
+        $query = $db->query("SELECT pv.id, pv.tmplvar_id, value_id, v.title, v.image, pv.modifier, pv.amount, v.fields, v.meta, pv.selected
             FROM {$this->tableProductValues} pv
             JOIN {$this->tableValues} v ON v.id = pv.value_id
             WHERE `product_id` = '$product_id'
@@ -769,8 +826,9 @@ class CommerceOptions
             }
 
             $row['fields'] = json_decode($row['fields'], true);
+            $row['meta'] = json_decode($row['meta'], true);
             $product_values[$row['tmplvar_id']][$row['id']] = $row;
-            $options[$row['id']] = array_intersect_key($row, array_flip(['id', 'modifier', 'amount', 'image', 'title', 'fields']));
+            $options[$row['id']] = array_intersect_key($row, array_flip(['id', 'modifier', 'amount', 'image', 'title', 'fields', 'meta']));
         }
 
         $query = $db->select('*', $this->tableGroupValues, "`product_id` = '$product_id'");
@@ -823,61 +881,92 @@ class CommerceOptions
             }
         }
 
-        $tpl = ci()->tpl;
-        $out = [];
+        $tpl  = ci()->tpl;
+        $data = [];
 
         foreach ($tmplvars as $tv_id => $tv) {
             if (empty($product_values[$tv_id])) {
                 continue;
             }
 
+            $tv['output_type'] = !empty($tv['output_type']) ? $tv['output_type'] : 'radio';
+
+            $values = [];
+
+            foreach ($product_values[$tv_id] as $value) {
+                $value['sign']       = $this->modifiers[$value['modifier']];
+                $value['amount_raw'] = $value['amount'];
+                $value['amount']     = in_array($value['modifier'], ['add', 'subtract', 'replace']) ? $currency->format($value['amount']) : $value['amount'];
+                $value['hidden']     = empty($value['selected']) && in_array($tv['id'], $json['hideInactive']);
+                $values[] = $value;
+            }
+
+            $data[$tv['name']] = [
+                'tv'     => $tv,
+                'values' => $values,
+            ];
+        }
+//echo'<pre>';print_r($data);die();
+
+        if (!empty($this->eventParams['registerScripts'])) {
+            $modx->regClientScript(MODX_BASE_URL . 'assets/plugins/commerce-options/js/front.js?' . self::VERSION);
+            $modx->regClientScript('<script type="text/javascript">
+                var _tvco = ' . json_encode($json, JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK) . ';
+            </script>');
+        }
+
+        if (!empty($this->eventParams['api'])) {
+            return $data;
+        }
+
+        $out = [];
+
+        foreach ($data as $tv_name => $options) {
+            $tv = $options['tv'];
             $rows = '';
-            $output_type = !empty($tv['output_type']) ? $tv['output_type'] : 'radio';
-            $chunk = $this->getExtendedEventParam($output_type . 'Tpl', [$tv['name']]);
-            $modifierChunk = $this->getExtendedEventParam('modifierTpl', [$tv['name']]);
+            $chunk = $this->getExtendedEventParam($tv['output_type'] . 'Tpl', [$tv_name]);
+            $modifierChunk = $this->getExtendedEventParam('modifierTpl', [$tv_name]);
 
             $tv['e'] = [
-                'name'    => htmlentities($tv['name']),
+                'name'    => htmlentities($tv_name),
                 'caption' => htmlentities($tv['caption']),
             ];
 
-            $tv['controlname'] = 'tvcovalues[' . htmlentities($tv['name']) . ']';
+            $tv['controlname'] = 'tvcovalues[' . htmlentities($tv_name) . ']';
 
-            foreach ($product_values[$tv_id] as $value) {
+            foreach ($options['values'] as $value) {
                 $value['e'] = [
                     'title' => htmlentities($value['title']),
                     'image' => htmlentities($value['image']),
                 ];
 
                 $modifier = '';
-                if (!empty($value['amount'])) {
+                if (!empty($value['amount_raw'])) {
                     $modifier = $tpl->parseChunk($modifierChunk, [
-                        'value'  => $value,
-                        'tv'     => $tv,
-                        'sign'   => $this->modifiers[$value['modifier']],
-                        'amount' => in_array($value['modifier'], ['add', 'subtract', 'replace']) ? $currency->format($value['amount']) : $value['amount'],
+                        'value' => $value,
+                        'tv'    => $tv,
                     ]);
                 }
 
                 $rows .= $tpl->parseChunk($chunk, [
-                    'value'    => $value,
-                    'tv'       => $tv,
-                    'modifier' => $modifier,
-                    'selected' => !empty($value['selected']) ? ($output_type == 'dropdown' ? ' selected' : ' checked') : '',
-                    'hidden'   => empty($value['selected']) && in_array($tv['id'], $json['hideInactive']) ? ' style="display: none;"' : '',
+                    'value'         => $value,
+                    'tv'            => $tv,
+                    'modifier'      => $modifier,
+                    'selected_attr' => !empty($value['selected']) ? ($tv['output_type'] == 'dropdown' ? ' selected' : ' checked') : '',
+                    'hidden_style'  => !empty($value['hidden']) ? ' style="display: none;"' : '',
                 ]);
             }
 
-            $chunk = $this->getExtendedEventParam('tvTpl', [$output_type, $tv['name']]);
+            $chunk = $this->getExtendedEventParam('tvTpl', [$tv['output_type'], $tv_name]);
 
-            $out[$tv['name']] = $tpl->parseChunk($chunk, [
+            $out[$tv_name] = $tpl->parseChunk($chunk, [
                 'wrap' => $rows,
                 'tv'   => $tv,
             ]);
         }
 
         if (!empty($json['detach'])) {
-            $prefix = $this->getExtendedEventParam('detachPrefix', []);
+            $prefix = $this->eventParams['detachPrefix'];
 
             foreach ($json['detach'] as $tv_id) {
                 $name = $tmplvars[$tv_id]['name'];
@@ -892,13 +981,91 @@ class CommerceOptions
             $out = [];
         }
 
-        $modx->regClientScript(MODX_BASE_URL . 'assets/plugins/commerce-options/js/front.js?' . self::VERSION);
-        $modx->regClientScript('<script type="text/javascript">
-            var _tvco = ' . json_encode($json, JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK) . ';
-        </script>');
-
-        return $tpl->parseChunk($this->getExtendedEventParam('containerTpl'), [
+        return $tpl->parseChunk($this->eventParams['containerTpl'], [
             'wrap' => implode($out),
         ]);
+    }
+
+    public function getTmplvarColumns()
+    {
+        $lang = $this->lexicon->loadLang(['tvco']);
+
+        return [
+            'image' => [
+                'title'   => $lang['tvco.image'],
+                'content' => function($data) use ($lang) {
+                    return '
+                        <div class="value-image form-cell">
+                            <div class="preview"></div>
+                            <input type="text" class="form-control" name="tvo_values[' . $data['iteration'] . '][image]" value="' . (!empty($data['image']) ? htmlentities($data['image']) : '') . '">
+                            <button type="button" class="btn btn-seconday show-browser">' . $lang['tvco.select_image'] . '</button>
+                        </div>
+                    ';
+                },
+                'save' => function($data) {
+                    return [
+                        'image' => !empty($data['image']) && is_scalar($data['image']) ? ci()->modx->db->escape($data['image']) : '',
+                    ];
+                },
+                'sort' => 10,
+            ],
+            'title' => [
+                'title'   => $lang['tvco.name'],
+                'content' => function($data) {
+                    return '<input type="text" class="form-control" name="tvo_values[' . $data['iteration'] . '][title]" value="' . (!empty($data['title']) ? htmlentities($data['title']) : '') . '">';
+                },
+                'save' => function($data) {
+                    return [
+                        'title' => !empty($data['title']) && is_scalar($data['title']) ? ci()->modx->db->escape($data['title']) : '',
+                    ];
+                },
+                'sort' => 20,
+                'headstyle' => 'width: 55%;',
+            ],
+            'price' => [
+                'title'   => $lang['tvco.default_price_title'],
+                'content' => function($data) use ($lang) {
+                    $modifiers = '';
+
+                    foreach (array_keys($this->modifiers) as $modifier) {
+                        $modifiers .= '<option value="' . $modifier . '"' . (isset($data['modifier']) && $modifier == $data['modifier'] ? ' selected' : '') . '>' . $lang['tvco.modifier_' . $modifier] . '</option>';
+                    }
+
+                    return '
+                        <select class="form-control" name="tvo_values[' . $data['iteration'] . '][modifier]" size="1">' . $modifiers . '</select>
+                        <input type="text" class="form-control" name="tvo_values[' . $data['iteration'] . '][amount]" value="' . (!empty($data['amount']) ? htmlentities($data['amount']) : '') . '" style="width: 50px; text-align: right;">
+                    ';
+                },
+                'save' => function($data) {
+                    $db = ci()->modx->db;
+                    $modifier = 'add';
+
+                    if (!empty($data['modifier']) && is_scalar($data['modifier']) && in_array($data['modifier'], ['add', 'subtract', 'multiply', 'replace'])) {
+                        $modifier = $data['modifier'];
+                    }
+
+                    return [
+                        'modifier' => $db->escape($modifier),
+                        'amount'   => !empty($data['amount']) && is_numeric($data['amount']) ? floatval($data['amount']) : '',
+                    ];
+                },
+                'sort' => 30,
+                'cellstyle' => 'text-align: right; white-space: nowrap;',
+                'headstyle' => 'width: 1%;',
+            ],
+            'sort' => [
+                'title'   => $lang['tvco.sort_title'],
+                'content' => function($data) {
+                    return '<input type="text" class="form-control" name="tvo_values[' . $data['iteration'] . '][sort]" value="' . (!empty($data['sort']) ? htmlentities($data['sort']) : '0') . '" rows="4" style="text-align: right;">';
+                },
+                'save' => function($data) {
+                    return [
+                        'sort' => !empty($data['sort']) && is_scalar($data['sort']) ? ci()->modx->db->escape($data['sort']) : '0',
+                    ];
+                },
+                'sort' => 40,
+                'headstyle' => 'width: 100px;',
+            ],
+        ];
     }
 }

@@ -73,9 +73,33 @@ $modx->db->query("
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 ");
 
+$tableEventnames = $modx->getFullTablename('system_eventnames');
+
+$events = [
+    'OnManagerBeforeTmplvarValuesRender',
+    'OnManagerBeforeTmplvarValuesSave',
+];
+
+$query  = $modx->db->select('*', $tableEventnames, "`groupname` = 'CommerceOptions'");
+$exists = [];
+
+while ($row = $modx->db->getRow($query)) {
+    $exists[$row['name']] = $row['id'];
+}
+
+foreach ($events as $event) {
+    if (!isset($exists[$event])) {
+        $modx->db->insert([
+            'name'      => $event,
+            'service'   => 6,
+            'groupname' => 'CommerceOptions',
+        ], $tableEventnames);
+    }
+}
+
 // remove installer
-$tablePlugins = $modx->getFullTablename('site_plugins');
-$tableEvents  = $modx->getFullTablename('site_plugin_events');
+$tablePlugins    = $modx->getFullTablename('site_plugins');
+$tableEvents     = $modx->getFullTablename('site_plugin_events');
 
 $query = $modx->db->select('id', $tablePlugins, "`name` = '" . $modx->event->activePlugin . "'");
 
