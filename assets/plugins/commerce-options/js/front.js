@@ -12,9 +12,10 @@
             var tvco    = this,
                 tv_id   = tvco.options.tmplvars[tvindex],
                 $block  = tvco.$blocks.filter('[data-id="' + tv_id + '"]'),
-                $inputs = $block.find('input'),
-                value   = parseInt($block.find(':checked').val()) || 0,
-                state   = [];
+                $inputs = $block.find('input, option'),
+                value   = parseInt($block.find(':checked, :selected').val()) || 0,
+                state   = [],
+                isDropdown = $inputs.parent().is('select');
 
             var autoCheckSameOptions = tvco.options.autoCheckSameOptions.length && tvco.options.autoCheckSameOptions.indexOf(tv_id) !== -1,
                 hideInactive         = tvco.options.hideInactive.length && tvco.options.hideInactive.indexOf(tv_id) !== -1;
@@ -39,13 +40,13 @@
                     }
 
                     if (shouldDisable) {
-                        if (this.checked) {
+                        if (this.checked || this.selected) {
                             if (!wasDisabled) {
                                 state.push(this.getAttribute('data-value'));
                             }
 
                             if (uncheckDisabled) {
-                                this.checked = false;
+                                this.checked = this.selected = false;
                             }
                         }
                     }
@@ -53,11 +54,16 @@
             }
 
             if (tvindex < tvco.options.tmplvars.length - 1) {
-                if (!$inputs.filter(':checked').length) {
+                if (!$inputs.filter(':checked, :selected').length) {
                     var $first = $inputs.not(':disabled').first();
 
                     if ($first.length) {
-                        $first.get(0).checked = true;
+                        if (isDropdown) {
+                            $first.get(0).selected = true;
+                        } else {
+                            $first.get(0).checked = true;
+                        }
+
                         value = parseInt($first.val()) || 0;
                     }
                 }
@@ -68,12 +74,12 @@
                     var first = $inputs.not(':disabled').filter('[data-value="' + state[i] + '"]').get(0);
 
                     if (first) {
-                        first.checked = true;
+                        first.checked = first.selected = true;
                     }
                 }
             }
 
-            $inputs.not(':disabled').filter(':checked').each(function() {
+            $inputs.not(':disabled').filter(':checked, :selected').each(function() {
                 tvco.checkedOptions.push(tvco.options.options[this.value]);
             });
 

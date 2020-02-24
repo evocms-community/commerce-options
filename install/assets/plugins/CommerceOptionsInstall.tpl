@@ -17,7 +17,7 @@ $modx->db->query("
     CREATE TABLE IF NOT EXISTS " . $modx->getFullTablename('commerce_tvo') . " (
         `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
         `tmplvar_id` int(10) unsigned NOT NULL,
-        `output_type` enum('radio','checkbox') NOT NULL DEFAULT 'radio',
+        `output_type` enum('radio','checkbox','dropdown') NOT NULL DEFAULT 'radio',
         `chunk` varchar(255) NOT NULL,
         `efilter_chunk` varchar(255) NOT NULL,
         `created_at` timestamp NULL DEFAULT '0000-00-00 00:00:00',

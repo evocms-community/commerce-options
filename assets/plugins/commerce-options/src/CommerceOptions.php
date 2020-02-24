@@ -20,7 +20,7 @@ class CommerceOptions
     private $tableGroupValues;
 
     private $modifiers = ['add' => '+', 'subtract' => '-', 'multiply' => 'x', 'replace' => '='];
-    private $outputs   = ['radio', 'checkbox', /*'dropdown', 'custom'*/];
+    private $outputs   = ['radio', 'checkbox', 'dropdown'];
 
     public function __construct($params)
     {
