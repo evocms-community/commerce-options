@@ -13,11 +13,13 @@
 
 $modx->clearCache('full');
 
+$table = $modx->getFullTablename('commerce_tvo');
+
 $modx->db->query("
-    CREATE TABLE IF NOT EXISTS " . $modx->getFullTablename('commerce_tvo') . " (
+    CREATE TABLE IF NOT EXISTS $table (
         `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
         `tmplvar_id` int(10) unsigned NOT NULL,
-        `output_type` enum('radio','checkbox','dropdown') NOT NULL DEFAULT 'radio',
+        `output_type` enum('radio','checkbox') NOT NULL DEFAULT 'radio',
         `chunk` varchar(255) NOT NULL,
         `efilter_chunk` varchar(255) NOT NULL,
         `created_at` timestamp NULL DEFAULT '0000-00-00 00:00:00',
@@ -26,6 +28,9 @@ $modx->db->query("
         KEY `tmplvar_id` (`tmplvar_id`)
     ) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
 ");
+
+$modx->db->query("ALTER TABLE $table CHANGE `output_type` `output_type` ENUM('radio', 'checkbox', 'dropdown') CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT 'radio';", false);
+$modx->db->query("ALTER TABLE $table ADD `required` TINYINT(1) NOT NULL DEFAULT '0' AFTER `output_type`;", false);
 
 $modx->db->query("
     CREATE TABLE IF NOT EXISTS " . $modx->getFullTablename('commerce_tvo_values') . " (
