@@ -56,6 +56,10 @@ class CommerceOptions
     public function modifyPrice($price, $modifier, $amount)
     {
         if ($amount > 0) {
+            if ($modifier != 'multiply') {
+                $amount = ci()->currency->convertFromDefault($amount);
+            }
+
             switch ($modifier) {
                 case 'add': {
                     $price += $amount;
