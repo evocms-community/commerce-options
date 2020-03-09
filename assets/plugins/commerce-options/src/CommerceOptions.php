@@ -1029,10 +1029,11 @@ class CommerceOptions
             $modx->setPlaceholder($prefix . 'all', implode($out));
             $out = [];
         }
-
-        return $tpl->parseChunk($this->eventParams['containerTpl'], [
+        $out = !empty($out) ? $tpl->parseChunk($this->eventParams['containerTpl'], [
             'wrap' => implode($out),
-        ]);
+        ]) : '';
+        
+        return $out;
     }
 
     public function getTmplvarColumns()
