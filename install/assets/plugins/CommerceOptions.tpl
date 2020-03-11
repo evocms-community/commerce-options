@@ -25,7 +25,7 @@ switch ($modx->event->name) {
         $processor = ci()->optionsProcessor;
 
         if (method_exists($processor, $modx->event->name)) {
-            call_user_func([$processor, $modx->event->name], $params);
+            call_user_func_array([$processor, $modx->event->name], ['params' => &$params]);
         }
         break;
     }
