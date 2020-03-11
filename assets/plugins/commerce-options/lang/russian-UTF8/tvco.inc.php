@@ -29,4 +29,5 @@ return [
     'tvco.chunk_note' => 'Только если тип вывода указан как "Пользовательский"',
     'tvco.selected' => 'Выбор',
     'tvco.clear_btn' => 'Очистить',
+    'tvco.required_option' => 'Обязательная опция',
 ];

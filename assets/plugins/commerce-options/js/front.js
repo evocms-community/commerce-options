@@ -5,20 +5,76 @@
         this.$container = $('[data-tvco-container]');
         this.$blocks    = $('[data-tvco-block]');
         this.options    = _tvco;
+
+        var tvco = this;
+
+        $(document).on('cart-add.commerce1', function(e, data) {
+            if (data.cart.instance == 'products') {
+                var required = [];
+
+                for (var i = 0; i < tvco.options.tmplvars.length; i++) {
+                    if (!tvco.options.tmplvars[i].required) {
+                        continue;
+                    }
+
+                    required.push(tvco.options.tmplvars[i].id);
+                }
+
+                if (!data.meta || !data.meta.tvco || !data.tvcovalues) {
+                    e.preventDefault();
+                    tvco.markRequiredOptions(required);
+                    return;
+                }
+
+                var checked  = [];
+
+                for (var i = 0; i < data.meta.tvco.length; i++) {
+                    if (!tvco.options.options[ data.meta.tvco[i] ]) {
+                        continue;
+                    }
+
+                    checked.push(tvco.options.options[ data.meta.tvco[i] ].tmplvar_id);
+                }
+
+                failed = required.filter(function(id) {
+                    return checked.indexOf(id) === -1;
+                });
+
+                if (failed.length) {
+                    e.preventDefault();
+                    tvco.markRequiredOptions(failed);
+                }
+            }
+        });
+
+        $(document).on('cart-add-complete.commerce', function(e, data) {
+            if (data.data.cart.instance == 'products') {
+                if (data.response.tvco_redirect && window.location != data.response.tvco_redirect) {
+                    window.location = data.response.tvco_redirect;
+                    return;
+                }
+
+                if (data.response.required_options_missed) {
+                    tvco.markRequiredOptions(data.response.required_options_missed);
+                }
+            }
+        });
     };
 
     CommerceOptions.prototype = {
         updateStateIteration: function(tvindex, structure) {
             var tvco    = this,
-                tv_id   = tvco.options.tmplvars[tvindex],
+                tv_id   = tvco.options.tmplvars[tvindex].id,
                 $block  = tvco.$blocks.filter('[data-id="' + tv_id + '"]'),
-                $inputs = $block.find('input'),
-                value   = parseInt($block.find(':checked').val()) || 0,
-                state   = [];
+                $inputs = $block.find('input, option'),
+                value   = parseInt($block.find(':checked, :selected').val()) || 0,
+                state   = [],
+                isDropdown = $inputs.parent().is('select');
 
             var autoCheckSameOptions = tvco.options.autoCheckSameOptions.length && tvco.options.autoCheckSameOptions.indexOf(tv_id) !== -1,
-                hideInactive         = tvco.options.hideInactive.length && tvco.options.hideInactive.indexOf(tv_id) !== -1;
-                uncheckDisabled      = tvco.options.uncheckDisabled.length && tvco.options.uncheckDisabled.indexOf(tv_id) !== -1;
+                hideInactive         = tvco.options.hideInactive.length && tvco.options.hideInactive.indexOf(tv_id) !== -1,
+                uncheckDisabled      = tvco.options.uncheckDisabled.length && tvco.options.uncheckDisabled.indexOf(tv_id) !== -1,
+                avoidUnchecked       = tvco.options.avoidUnchecked.length && tvco.options.avoidUnchecked.indexOf(tv_id) !== -1;
 
             if (structure.length) {
 
@@ -39,28 +95,17 @@
                     }
 
                     if (shouldDisable) {
-                        if (this.checked) {
+                        if (this.checked || this.selected) {
                             if (!wasDisabled) {
                                 state.push(this.getAttribute('data-value'));
                             }
 
                             if (uncheckDisabled) {
-                                this.checked = false;
+                                this.checked = this.selected = false;
                             }
                         }
                     }
                 });
-            }
-
-            if (tvindex < tvco.options.tmplvars.length - 1) {
-                if (!$inputs.filter(':checked').length) {
-                    var $first = $inputs.not(':disabled').first();
-
-                    if ($first.length) {
-                        $first.get(0).checked = true;
-                        value = parseInt($first.val()) || 0;
-                    }
-                }
             }
 
             if (autoCheckSameOptions && state.length) {
@@ -68,16 +113,34 @@
                     var first = $inputs.not(':disabled').filter('[data-value="' + state[i] + '"]').get(0);
 
                     if (first) {
-                        first.checked = true;
+                        first.checked = first.selected = true;
                     }
                 }
             }
 
-            $inputs.not(':disabled').filter(':checked').each(function() {
+            var $availableInputs = $inputs.not(':disabled');
+
+            if ($availableInputs.filter(':checked, :selected').length) {
+                $block.removeClass(tvco.options.requiredClass);
+            } else if (avoidUnchecked) {
+                var $first = $availableInputs.first();
+
+                if ($first.length) {
+                    if (isDropdown) {
+                        $first.get(0).selected = true;
+                    } else {
+                        $first.get(0).checked = true;
+                    }
+
+                    value = parseInt($first.val()) || 0;
+                }
+            }
+
+            $availableInputs.filter(':checked, :selected').each(function() {
                 tvco.checkedOptions.push(tvco.options.options[this.value]);
             });
 
-            if (tvindex + 1 <= tvco.options.tmplvars.length) {
+            if (tvindex + 1 < tvco.options.tmplvars.length) {
                 var children = [];
 
                 for (var i = 0; i < structure.length; i++) {
@@ -145,6 +208,20 @@
 
                 $self.html(Commerce.formatPrice(eventOptions.calculatedPrice));
             });
+        },
+
+        markRequiredOptions: function(failed) {
+            this.$blocks.removeClass(this.options.requiredClass);
+
+            if (failed.length) {
+                this.$container.trigger('required-options-missed.commerce', {tv_ids: failed});
+
+                for (var i = 0; i < failed.length; i++) {
+                    var $block = this.$blocks.filter('[data-id="' + failed[i] + '"]');
+                    $block.addClass(this.options.requiredClass);
+                    $block.trigger('required-option-missed.commerce');
+                }
+            }
         }
     };
 
@@ -189,12 +266,4 @@
 
         tvco.updateState();
     });
-
-    /*$(document).on('cart-add-complete.commerce', function(e, data) {
-        if (data.data.cart.instance == 'products' && typeof data.response.redirect != 'undefined') {
-            if (window.location != data.response.redirect) {
-                window.location = data.response.redirect;
-            }
-        }
-    });*/
 })(jQuery);

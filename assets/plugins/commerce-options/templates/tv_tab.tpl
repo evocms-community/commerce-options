@@ -18,6 +18,16 @@
 
         <div class="row form-row tvco-extra-row">
             <label class="col-md-3 col-lg-2">
+                <?= $lang['tvco.required_option'] ?>
+            </label>
+
+            <div class="col-md-9 col-lg-10">
+                <input type="checkbox" name="tvco_extra[required]" onchange="documentDirty=true;" <?= !empty($extra['required']) ? 'checked' : '' ?>>
+            </div>
+        </div>
+
+        <div class="row form-row tvco-extra-row">
+            <label class="col-md-3 col-lg-2">
                 <?= $lang['tvco.chunk'] ?>
                 <small class="form-text text-muted"><?= $lang['tvco.chunk_note'] ?></small>
             </label>
@@ -43,17 +53,16 @@
             <thead>
                 <tr>
                     <td style="width: 1%;"></td>
-                    <td><?= $lang['tvco.image'] ?></td>
-                    <td style="width: 55%;"><?= $lang['tvco.name'] ?></td>
-                    <td style="width: 1%;"><?= $lang['tvco.default_price_title'] ?></td>
-                    <td style="width: 100px;"><?= $lang['tvco.sort_title'] ?></td>
+                    <?php foreach ($columns as $column): ?>
+                        <td<?= !empty($column['headstyle']) ? ' style="' . $column['headstyle'] . '"' : '' ?>><?= $column['title'] ?></td>
+                    <?php endforeach; ?>
                     <td style="width: 1%;"></td>
                 </tr>
             </thead>
 
             <tfoot>
                 <tr>
-                    <td colspan="6" style="text-align: right;">
+                    <td colspan="<?= count($columns) + 2 ?>" style="text-align: right;">
                         <a href="#" class="btn btn-primary btn-sm add-tmplvar-value"><?= $lang['tvco.add_value'] ?></a>
                     </td>
                 </tr>
@@ -62,9 +71,8 @@
             <tbody>
                 <?php foreach ($values as $iteration => $value): ?>
                     <?= $this->render('tv_tab_row.tpl', [
-                        'lang'      => $lang,
-                        'modifiers' => $modifiers,
                         'iteration' => $iteration,
+                        'columns'   => $columns,
                         'row'       => $value,
                     ]); ?>
                 <?php endforeach; ?>
@@ -87,15 +95,8 @@
 
 <script type="text/template" id="attrValueTpl">
     <?= $this->render('tv_tab_row.tpl', [
-        'lang'      => $lang,
-        'modifiers' => $modifiers,
         'iteration' => '{%iteration%}',
-        'row'       => [
-            'title'    => '',
-            'image'    => '',
-            'modifier' => '',
-            'amount'   => '',
-            'sort'     => '{%sort%}',
-        ],
+        'columns'   => $columns,
+        'row'       => $blank,
     ]); ?>
 </script>

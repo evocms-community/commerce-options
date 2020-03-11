@@ -7,7 +7,7 @@ class CommerceOptions
 {
     use Commerce\Module\CustomizableFieldsTrait;
 
-    const VERSION = 'v0.1.0';
+    const VERSION = 'v0.1.1';
 
     public $lexicon;
 
@@ -20,7 +20,7 @@ class CommerceOptions
     private $tableGroupValues;
 
     private $modifiers = ['add' => '+', 'subtract' => '-', 'multiply' => 'x', 'replace' => '='];
-    private $outputs   = ['radio', 'checkbox', /*'dropdown', 'custom'*/];
+    private $outputs   = ['radio', 'checkbox', 'dropdown'];
 
     public function __construct($params)
     {
@@ -56,6 +56,10 @@ class CommerceOptions
     public function modifyPrice($price, $modifier, $amount)
     {
         if ($amount > 0) {
+            if ($modifier != 'multiply') {
+                $amount = ci()->currency->convertFromDefault($amount);
+            }
+
             switch ($modifier) {
                 case 'add': {
                     $price += $amount;
@@ -84,50 +88,90 @@ class CommerceOptions
 
     public function OnBeforeCartItemAdding(&$params)
     {
-        if ($params['instance'] == 'products' && !empty($params['item']['meta']['tvco'])) {
+        if ($params['instance'] == 'products') {
             $modx  = ci()->modx;
-
-            $ids = array_filter($params['item']['meta']['tvco'], function($id) {
-                return is_numeric($id);
-            });
 
             $doc = $modx->getDocument($params['item']['id'], 'id,template', 'all');
 
             $tableTmplvars  = $modx->getFullTablename('site_tmplvars');
             $tableTemplates = $modx->getFullTablename('site_tmplvar_templates');
 
-            $query = $modx->db->query("SELECT pv.id, tv.id AS tv_id, tv.caption, v.title AS `value`, pv.modifier, pv.amount
-                FROM {$this->tableProductValues} pv
-                JOIN $tableTmplvars tv ON tv.id = pv.tmplvar_id
-                JOIN {$this->tableValues} v ON v.id = pv.value_id
+            $query = $modx->db->query("SELECT e.required, tv.id, tv.caption
+                FROM $tableTmplvars tv
+                LEFT JOIN {$this->tableExtra} e ON e.tmplvar_id = tv.id
                 JOIN $tableTemplates tpls ON tpls.tmplvarid = tv.id
                 WHERE tpls.templateid = '{$doc['template']}'
-                AND pv.product_id = '{$doc['id']}'
-                AND pv.id IN ('" . implode("','", $ids) . "')
-                ORDER BY tpls.rank, v.sort;
+                AND tv.type = 'custom_tv:commerce_options'
+                ORDER BY tpls.rank;
             ");
 
-            $values = $meta = [];
-            $price = $params['item']['price'];
+            $tmplvars = $modx->db->makeArray($query, 'id');
+            $tv_ids = "'" . implode("','", array_keys($tmplvars)) . "'";
 
-            while ($row = $modx->db->getRow($query)) {
-                $price = $this->modifyPrice($price, $row['modifier'], $row['amount']);
+            $checked_tvs = [];
 
-                if (isset($values[$row['tv_id']])) {
-                    $values[$row['tv_id']] .= ', ' . $row['value'];
-                } else {
-                    $values[$row['tv_id']] = $row['caption'] . ': ' . $row['value'];
+            if (!empty($params['item']['meta']['tvco'])) {
+                $ids = array_filter($params['item']['meta']['tvco'], function($id) {
+                    return is_numeric($id);
+                });
+
+                $query = $modx->db->query("SELECT pv.id, v.tmplvar_id, v.title AS `value`, pv.modifier, pv.amount
+                    FROM {$this->tableProductValues} pv
+                    JOIN {$this->tableValues} v ON v.id = pv.value_id
+                    WHERE v.tmplvar_id IN ($tv_ids)
+                    AND pv.product_id = '{$doc['id']}'
+                    AND pv.id IN ('" . implode("','", $ids) . "')
+                    ORDER BY v.sort;
+                ");
+
+                $values = $meta = [];
+                $price = $params['item']['price'];
+
+                while ($row = $modx->db->getRow($query)) {
+                    $price = $this->modifyPrice($price, $row['modifier'], $row['amount']);
+
+                    $tv = $tmplvars[ $row['tmplvar_id'] ];
+                    $checked_tvs[ $tv['id'] ] = true;
+
+                    if (isset($values[ $tv['id'] ])) {
+                        $values[ $tv['id'] ] .= ', ' . $row['value'];
+                    } else {
+                        $values[ $tv['id'] ] = $tv['caption'] . ': ' . $row['value'];
+                    }
+
+                    $meta[] = $row;
                 }
+            }
 
-                $meta[] = $row;
+            $failed = [];
+
+            foreach ($tmplvars as $tv) {
+                if ($tv['required'] && !isset($checked_tvs[ $tv['id'] ])) {
+                    $failed[] = intval($tv['id']);
+                }
+            }
+
+            if (!empty($failed)) {
+                $_SESSION['tvco.required_options_missed'] = $failed;
+                $modx->event->stopPropagation();
+                $params['prevent'] = true;
+                return false;
             }
 
             $params['item']['meta']['tvco'] = $meta;
             $params['item']['price'] = $price;
-            $params['item']['options'][] = implode("\n", $values);
+            $params['item']['options'] = array_merge($params['item']['options'], $values);
         }
 
         return true;
+    }
+
+    public function OnCommerceAjaxResponse(&$params)
+    {
+        if (isset($_SESSION['tvco.required_options_missed'])) {
+            $params['response']['required_options_missed'] = $_SESSION['tvco.required_options_missed'];
+            unset($_SESSION['tvco.required_options_missed']);
+        }
     }
 
     /**
@@ -139,7 +183,7 @@ class CommerceOptions
         $currency = ci()->currency;
 
         foreach ([$this->tableValues, $this->tableProductValues] as $table) {
-            $query = $db->select('*', $table, "`amount` != 0");
+            $query = $db->select('*', $table, "`amount` != 0 AND `modifier` IN ('add', 'subtract', 'replace')");
 
             while ($row = $db->getRow($query)) {
                 $amount = $currency->convert($row['amount'], $params['old']['code'], $params['new']['code']);
@@ -215,6 +259,7 @@ class CommerceOptions
 
                 $data = [
                     'output_type'   => $db->escape($_POST['tvco_extra']['output_type']),
+                    'required'      => !empty($_POST['tvco_extra']['required']) ? 1 : 0,
                     'chunk'         => $db->escape($_POST['tvco_extra']['chunk']),
                     'efilter_chunk' => $db->escape($_POST['tvco_extra']['efilter_chunk']),
                 ];
@@ -828,7 +873,7 @@ class CommerceOptions
             $row['fields'] = json_decode($row['fields'], true);
             $row['meta'] = json_decode($row['meta'], true);
             $product_values[$row['tmplvar_id']][$row['id']] = $row;
-            $options[$row['id']] = array_intersect_key($row, array_flip(['id', 'modifier', 'amount', 'image', 'title', 'fields', 'meta']));
+            $options[$row['id']] = array_intersect_key($row, array_flip(['id', 'tmplvar_id', 'modifier', 'amount', 'image', 'title', 'fields', 'meta']));
         }
 
         $query = $db->select('*', $this->tableGroupValues, "`product_id` = '$product_id'");
@@ -856,14 +901,18 @@ class CommerceOptions
         }
 
         $json = [
-            'structure' => $structure,
-            'options'   => $options,
-            'tmplvars'  => array_values(array_map(function($tv) {
-                return $tv['id'];
+            'structure'     => $structure,
+            'options'       => $options,
+            'requiredClass' => $params['requiredClass'],
+            'tmplvars'      => array_values(array_map(function($tv) {
+                return [
+                    'id'       => $tv['id'],
+                    'required' => $tv['required'],
+                ];
             }, $tmplvars)),
         ];
 
-        foreach (['detach', 'hideInactive', 'autoCheckSameOptions', 'uncheckDisabled'] as $param) {
+        foreach (['detach', 'hideInactive', 'autoCheckSameOptions', 'uncheckDisabled', 'avoidUnchecked'] as $param) {
             $json[$param] = [];
 
             if ($params[$param] === true || $params[$param] == 1) {
@@ -906,7 +955,7 @@ class CommerceOptions
                 'values' => $values,
             ];
         }
-//echo'<pre>';print_r($data);die();
+
 
         if (!empty($this->eventParams['registerScripts'])) {
             $modx->regClientScript(MODX_BASE_URL . 'assets/plugins/commerce-options/js/front.js?' . self::VERSION);

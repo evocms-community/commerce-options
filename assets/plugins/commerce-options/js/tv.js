@@ -47,7 +47,7 @@ jQuery(function() {
             var sort = 0;
 
             $table.children('tbody').children('tr').each(function(i) {
-                var rowsort = $(this).find('input[name*="[sort]"]').val();
+                var rowsort = parseInt($(this).find('input[name*="[sort]"]').val()) || 0;
 
                 if (rowsort > sort) {
                     sort = rowsort;
