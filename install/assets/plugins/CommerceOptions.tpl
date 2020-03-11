@@ -6,7 +6,7 @@
  *
  * @category    plugin
  * @author      mnoskov
- * @version     0.1.1
+ * @version     0.1.2
  * @internal    @events OnInitializeCommerce,OnDocFormRender,OnDocFormSave,OnTVFormRender,OnTVFormSave,OnTVFormDelete,OnEmptyTrash,OnDocDuplicate,OnBeforeCartItemAdding,OnCommerceAjaxResponse,OnManagerBeforeDefaultCurrencyChange
  * @internal    @modx_category Commerce
  * @internal    @installset base

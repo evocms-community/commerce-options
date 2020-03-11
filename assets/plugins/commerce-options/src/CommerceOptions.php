@@ -7,7 +7,7 @@ class CommerceOptions
 {
     use Commerce\Module\CustomizableFieldsTrait;
 
-    const VERSION = 'v0.1.1';
+    const VERSION = 'v0.1.2';
 
     public $lexicon;
 
@@ -125,7 +125,9 @@ class CommerceOptions
                 ");
 
                 $values = $meta = [];
-                $price = $params['item']['price'];
+                $price  = $params['item']['price'];
+                $price = str_replace(',', '.', $price);
+                $price = number_format((float)$price, 6, '.', '');
 
                 while ($row = $modx->db->getRow($query)) {
                     $price = $this->modifyPrice($price, $row['modifier'], $row['amount']);
@@ -141,6 +143,9 @@ class CommerceOptions
 
                     $meta[] = $row;
                 }
+
+                $price = str_replace(',', '.', $price);
+                $price = number_format((float)$price, 6, '.', '');
             }
 
             $failed = [];
