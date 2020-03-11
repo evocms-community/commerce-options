@@ -173,7 +173,7 @@
 
             this.$container.closest('[data-commerce-action="add"]').find('[data-commerce-price]').each(function() {
                 var $self    = $(this),
-                    original = parseFloat($self.attr('data-commerce-price')),
+                    original = parseFloat($self.attr('data-commerce-price').replace(',', '.')),
                     price    = original;
 
                 if (typeof price != 'number') {
