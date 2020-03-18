@@ -7,7 +7,7 @@ class CommerceOptions
 {
     use Commerce\Module\CustomizableFieldsTrait;
 
-    const VERSION = 'v0.1.2';
+    const VERSION = 'v0.1.3';
 
     public $lexicon;
 
@@ -21,6 +21,8 @@ class CommerceOptions
 
     private $modifiers = ['add' => '+', 'subtract' => '-', 'multiply' => 'x', 'replace' => '='];
     private $outputs   = ['radio', 'checkbox', 'dropdown'];
+
+    private $ajaxResponse = [];
 
     public function __construct($params)
     {
@@ -157,7 +159,8 @@ class CommerceOptions
             }
 
             if (!empty($failed)) {
-                $_SESSION['tvco.required_options_missed'] = $failed;
+                $this->ajaxResponse['required_options_missed'] = $failed;
+                $this->ajaxResponse['product_details_link'] = $modx->makeUrl($doc['id']);
                 $modx->event->stopPropagation();
                 $params['prevent'] = true;
                 return false;
@@ -173,9 +176,9 @@ class CommerceOptions
 
     public function OnCommerceAjaxResponse(&$params)
     {
-        if (isset($_SESSION['tvco.required_options_missed'])) {
-            $params['response']['required_options_missed'] = $_SESSION['tvco.required_options_missed'];
-            unset($_SESSION['tvco.required_options_missed']);
+        if (!empty($this->ajaxResponse)) {
+            $params['response'] = array_merge($params['response'], $this->ajaxResponse);
+            $this->ajaxResponse = [];
         }
     }
 
@@ -842,6 +845,13 @@ class CommerceOptions
         return $result;
     }
 
+    public function OnWebPagePrerender($params)
+    {
+        $modx = ci()->modx;
+        $script = MODX_BASE_URL . 'assets/plugins/commerce-options/js/front.js?' . self::VERSION;
+        $modx->documentOutput = str_replace('</body>', '<script src="' . $script . '"></script></body>', $modx->documentOutput);
+    }
+
     public function renderOptions($params)
     {
         $modx = ci()->modx;
@@ -936,7 +946,11 @@ class CommerceOptions
         }
 
         $tpl  = ci()->tpl;
-        $data = [];
+        $hash = $modx->commerce->generateRandomString(16);
+        $data = [
+            'hash' => $hash,
+            'tvs'  => [],
+        ];
 
         foreach ($tmplvars as $tv_id => $tv) {
             if (empty($product_values[$tv_id])) {
@@ -944,6 +958,7 @@ class CommerceOptions
             }
 
             $tv['output_type'] = !empty($tv['output_type']) ? $tv['output_type'] : 'radio';
+            $tv['hash'] = $hash;
 
             $values = [];
 
@@ -955,15 +970,13 @@ class CommerceOptions
                 $values[] = $value;
             }
 
-            $data[$tv['name']] = [
+            $data['tvs'][$tv['name']] = [
                 'tv'     => $tv,
                 'values' => $values,
             ];
         }
 
-
         if (!empty($this->eventParams['registerScripts'])) {
-            $modx->regClientScript(MODX_BASE_URL . 'assets/plugins/commerce-options/js/front.js?' . self::VERSION);
             $modx->regClientScript('<script type="text/javascript">
                 var _tvco = ' . json_encode($json, JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK) . ';
             </script>');
@@ -975,7 +988,7 @@ class CommerceOptions
 
         $out = [];
 
-        foreach ($data as $tv_name => $options) {
+        foreach ($data['tvs'] as $tv_name => $options) {
             $tv = $options['tv'];
             $rows = '';
             $chunk = $this->getExtendedEventParam($tv['output_type'] . 'Tpl', [$tv_name]);
@@ -1015,6 +1028,7 @@ class CommerceOptions
 
             $out[$tv_name] = $tpl->parseChunk($chunk, [
                 'wrap' => $rows,
+                'hash' => $hash,
                 'tv'   => $tv,
             ]);
         }
@@ -1037,6 +1051,8 @@ class CommerceOptions
 
         return $tpl->parseChunk($this->eventParams['containerTpl'], [
             'wrap' => implode($out),
+            'hash' => $hash,
+            'product_id' => $product_id,
         ]);
     }
 

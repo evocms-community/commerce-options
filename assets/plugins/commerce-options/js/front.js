@@ -1,64 +1,19 @@
 ;
 
 (function($) {
-    var CommerceOptions = function() {
-        this.$container = $('[data-tvco-container]');
-        this.$blocks    = $('[data-tvco-block]');
+    var CommerceOptions = function(container) {
+        this.$container = $(container);
+        this.$blocks    = $('[data-tvco-block="' + container.getAttribute('data-tvco-container') + '"]');
         this.options    = _tvco;
 
+        container.tvco = this;
         var tvco = this;
 
-        $(document).on('cart-add.commerce1', function(e, data) {
-            if (data.cart.instance == 'products') {
-                var required = [];
-
-                for (var i = 0; i < tvco.options.tmplvars.length; i++) {
-                    if (!tvco.options.tmplvars[i].required) {
-                        continue;
-                    }
-
-                    required.push(tvco.options.tmplvars[i].id);
-                }
-
-                if (!data.meta || !data.meta.tvco || !data.tvcovalues) {
-                    e.preventDefault();
-                    tvco.markRequiredOptions(required);
-                    return;
-                }
-
-                var checked  = [];
-
-                for (var i = 0; i < data.meta.tvco.length; i++) {
-                    if (!tvco.options.options[ data.meta.tvco[i] ]) {
-                        continue;
-                    }
-
-                    checked.push(tvco.options.options[ data.meta.tvco[i] ].tmplvar_id);
-                }
-
-                failed = required.filter(function(id) {
-                    return checked.indexOf(id) === -1;
-                });
-
-                if (failed.length) {
-                    e.preventDefault();
-                    tvco.markRequiredOptions(failed);
-                }
-            }
+        this.$blocks.on('change', 'input[type="radio"], input[type="checkbox"], select', function(e) {
+            tvco.updateState();
         });
 
-        $(document).on('cart-add-complete.commerce', function(e, data) {
-            if (data.data.cart.instance == 'products') {
-                if (data.response.tvco_redirect && window.location != data.response.tvco_redirect) {
-                    window.location = data.response.tvco_redirect;
-                    return;
-                }
-
-                if (data.response.required_options_missed) {
-                    tvco.markRequiredOptions(data.response.required_options_missed);
-                }
-            }
-        });
+        tvco.updateState();
     };
 
     CommerceOptions.prototype = {
@@ -226,44 +181,72 @@
     };
 
     $(function() {
-        var tvco = new CommerceOptions();
-
-        var $blocks = $('[data-tvco-block]');
-
-        /*if (_tvco.allowUncheck.length) {
-            $radio = $([]);
-
-            for (var i = 0; i < _tvco.allowUncheck.length; i++) {
-                $radio = $radio.add($blocks.filter('[data-id="' + _tvco.allowUncheck[i] + '"]'))
-            }
-
-            (function($blocks) {
-                $radio.find('input[type="radio"]')
-                    .each(function() {
-                        this.previousState = this.checked;
-                    })
-                    .click(function() {
-                        if (this.previousState && this.checked) {
-                            this.checked = false;
-                        }
-
-                        this.previousState = this.checked;
-                        $('input[type="radio"][name="' + this.name + '"]').not(this).each(function() {
-                            this.previousState = false;
-                        })
-
-                        tvco.updateState();
-                    })
-                    .change();
-            })($blocks);
-
-            $blocks = $blocks.not($radio);
-        }*/
-
-        $blocks.find('input[type="radio"], input[type="checkbox"], select').change(function(e) {
-            tvco.updateState();
+        $('[data-tvco-container]').each(function() {
+            new CommerceOptions(this);
         });
 
-        tvco.updateState();
+        $(document).on('cart-add.commerce', function(e, data) {
+            if (data.cart.instance == 'products') {
+                var container = $('[data-tvco-container][data-product="' + data.id + '"]').get(0);
+
+                if (!container) {
+                    return;
+                }
+
+                var tvco = container.tvco;
+                var required = [];
+
+                for (var i = 0; i < tvco.options.tmplvars.length; i++) {
+                    if (!tvco.options.tmplvars[i].required) {
+                        continue;
+                    }
+
+                    required.push(tvco.options.tmplvars[i].id);
+                }
+
+                if (!data.meta || !data.meta.tvco || !data.tvcovalues) {
+                    e.preventDefault();
+                    tvco.markRequiredOptions(required);
+                    return;
+                }
+
+                var checked  = [];
+
+                for (var i = 0; i < data.meta.tvco.length; i++) {
+                    if (!tvco.options.options[ data.meta.tvco[i] ]) {
+                        continue;
+                    }
+
+                    checked.push(tvco.options.options[ data.meta.tvco[i] ].tmplvar_id);
+                }
+
+                failed = required.filter(function(id) {
+                    return checked.indexOf(id) === -1;
+                });
+
+                if (failed.length) {
+                    e.preventDefault();
+                    tvco.markRequiredOptions(failed);
+                }
+            }
+        });
+
+        $(document).on('cart-add-complete.commerce', function(e, data) {
+            if (data.data.cart.instance == 'products') {
+                if (data.response.required_options_missed) {
+                    var container = $('[data-tvco-container][data-product="' + data.id + '"]').get(0);
+
+                    if (container && container.tvco) {
+                        container.tvco.markRequiredOptions(data.response.required_options_missed);
+                    } else if (data.response.product_details_link) {
+                        if (window.location != data.response.product_details_link) {
+                            window.location = data.response.product_details_link;
+                        } else {
+                            $(document).trigger('required-options-missed.commerce', data);
+                        }
+                    }
+                }
+            }
+        });
     });
 })(jQuery);
