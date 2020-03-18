@@ -110,7 +110,7 @@ class CommerceOptions
             $tmplvars = $modx->db->makeArray($query, 'id');
             $tv_ids = "'" . implode("','", array_keys($tmplvars)) . "'";
 
-            $checked_tvs = [];
+            $checked_tvs = $values = $meta = [];
 
             if (!empty($params['item']['meta']['tvco'])) {
                 $ids = array_filter($params['item']['meta']['tvco'], function($id) {
@@ -126,7 +126,6 @@ class CommerceOptions
                     ORDER BY v.sort;
                 ");
 
-                $values = $meta = [];
                 $price  = $params['item']['price'];
                 $price = str_replace(',', '.', $price);
                 $price = number_format((float)$price, 6, '.', '');
@@ -166,9 +165,11 @@ class CommerceOptions
                 return false;
             }
 
-            $params['item']['meta']['tvco'] = $meta;
-            $params['item']['price'] = $price;
-            $params['item']['options'] = array_merge($params['item']['options'], $values);
+            if (!empty($values)) {
+                $params['item']['meta']['tvco'] = $meta;
+                $params['item']['price'] = $price;
+                $params['item']['options'] = array_merge($params['item']['options'], $values);
+            }
         }
 
         return true;
