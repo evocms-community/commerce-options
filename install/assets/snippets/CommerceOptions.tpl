@@ -6,13 +6,13 @@
  *
  * @category	snippet
  * @author      mnoskov
- * @version     0.1.3
+ * @version     0.1.4
  * @internal	@modx_category Commerce
  * @internal	@installset base
  * @internal	@overwrite true
  */
 
-if (empty($modx->commerce) || !defined('COMMERCE_INITIALIZED')) {
+if (!defined('COMMERCE_INITIALIZED')) {
 	return 'Commerce plugin required!';
 }
 

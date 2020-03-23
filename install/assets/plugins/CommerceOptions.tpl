@@ -6,11 +6,15 @@
  *
  * @category    plugin
  * @author      mnoskov
- * @version     0.1.3
+ * @version     0.1.4
  * @internal    @events OnInitializeCommerce,OnDocFormRender,OnDocFormSave,OnTVFormRender,OnTVFormSave,OnTVFormDelete,OnEmptyTrash,OnDocDuplicate,OnBeforeCartItemAdding,OnCommerceAjaxResponse,OnManagerBeforeDefaultCurrencyChange,OnWebPagePrerender
  * @internal    @modx_category Commerce
  * @internal    @installset base
  */
+
+if (!defined('COMMERCE_INITIALIZED')) {
+    return;
+}
 
 switch ($modx->event->name) {
     case 'OnInitializeCommerce': {
