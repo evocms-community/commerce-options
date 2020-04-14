@@ -193,15 +193,26 @@
                     return;
                 }
 
-                var tvco = container.tvco;
-                var required = [];
+                var tvco = container.tvco,
+                    required = [],
+                    availableVars = {},
+                    i;
 
-                for (var i = 0; i < tvco.options.tmplvars.length; i++) {
-                    if (!tvco.options.tmplvars[i].required) {
+                for (i in tvco.options.options) {
+                    availableVars[tvco.options.options[i].tmplvar_id] = tvco.options.options[i].tmplvar_id;
+                }
+
+
+                for (i = 0; i < tvco.options.tmplvars.length; i++) {
+                    if (!tvco.options.tmplvars[i].required || !availableVars[tvco.options.tmplvars[i].id]) {
                         continue;
                     }
 
                     required.push(tvco.options.tmplvars[i].id);
+                }
+
+                if (!required.length) {
+                    return;
                 }
 
                 if (!data.meta || !data.meta.tvco || !data.tvcovalues) {

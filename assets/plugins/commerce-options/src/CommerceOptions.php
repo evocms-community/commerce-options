@@ -110,39 +110,47 @@ class CommerceOptions
             $tmplvars = $modx->db->makeArray($query, 'id');
             $tv_ids = "'" . implode("','", array_keys($tmplvars)) . "'";
 
-            $checked_tvs = $values = $meta = [];
+            $checkedVars = $values = $meta = $required = [];
+
+            $query = $modx->db->query("SELECT pv.id, v.tmplvar_id, v.title AS `value`, pv.modifier, pv.amount
+                FROM {$this->tableProductValues} pv
+                JOIN {$this->tableValues} v ON v.id = pv.value_id
+                WHERE v.tmplvar_id IN ($tv_ids)
+                AND pv.product_id = '{$doc['id']}'
+                ORDER BY v.tmplvar_id, v.sort;
+            ");
+
+            $productValues = $modx->db->makeArray($query, 'id');
+
+            foreach ($productValues as $id => $value) {
+                if ($tmplvars[ $value['tmplvar_id'] ]['required']) {
+                    $required[ $value['tmplvar_id'] ] = $value['tmplvar_id'];
+                }
+            }
 
             if (!empty($params['item']['meta']['tvco'])) {
-                $ids = array_filter($params['item']['meta']['tvco'], function($id) {
-                    return is_numeric($id);
-                });
-
-                $query = $modx->db->query("SELECT pv.id, v.tmplvar_id, v.title AS `value`, pv.modifier, pv.amount
-                    FROM {$this->tableProductValues} pv
-                    JOIN {$this->tableValues} v ON v.id = pv.value_id
-                    WHERE v.tmplvar_id IN ($tv_ids)
-                    AND pv.product_id = '{$doc['id']}'
-                    AND pv.id IN ('" . implode("','", $ids) . "')
-                    ORDER BY v.sort;
-                ");
-
-                $price  = $params['item']['price'];
+                $price = $params['item']['price'];
                 $price = str_replace(',', '.', $price);
                 $price = number_format((float)$price, 6, '.', '');
 
-                while ($row = $modx->db->getRow($query)) {
-                    $price = $this->modifyPrice($price, $row['modifier'], $row['amount']);
-
-                    $tv = $tmplvars[ $row['tmplvar_id'] ];
-                    $checked_tvs[ $tv['id'] ] = true;
-
-                    if (isset($values[ $tv['id'] ])) {
-                        $values[ $tv['id'] ] .= ', ' . $row['value'];
-                    } else {
-                        $values[ $tv['id'] ] = $tv['caption'] . ': ' . $row['value'];
+                foreach ($params['item']['meta']['tvco'] as $value_id) {
+                    if (!isset($productValues[$value_id])) {
+                        continue;
                     }
 
-                    $meta[] = $row;
+                    $value = $productValues[$value_id];
+                    $price = $this->modifyPrice($price, $value['modifier'], $value['amount']);
+
+                    $tv = $tmplvars[ $value['tmplvar_id'] ];
+                    $checkedVars[ $tv['id'] ] = true;
+
+                    if (isset($values[ $tv['id'] ])) {
+                        $values[ $tv['id'] ] .= ', ' . $value['value'];
+                    } else {
+                        $values[ $tv['id'] ] = $tv['caption'] . ': ' . $value['value'];
+                    }
+
+                    $meta[] = $value;
                 }
 
                 $price = str_replace(',', '.', $price);
@@ -151,9 +159,9 @@ class CommerceOptions
 
             $failed = [];
 
-            foreach ($tmplvars as $tv) {
-                if ($tv['required'] && !isset($checked_tvs[ $tv['id'] ])) {
-                    $failed[] = intval($tv['id']);
+            foreach ($required as $tv_id) {
+                if (!isset($checkedVars[$tv_id])) {
+                    $failed[] = intval($tv_id);
                 }
             }
 
