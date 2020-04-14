@@ -4,7 +4,7 @@
     var CommerceOptions = function(container) {
         this.$container = $(container);
         this.$blocks    = $('[data-tvco-block="' + container.getAttribute('data-tvco-container') + '"]');
-        this.options    = _tvco;
+        this.options    = window['_tvco' + this.$container.attr('data-product')];
 
         container.tvco = this;
         var tvco = this;

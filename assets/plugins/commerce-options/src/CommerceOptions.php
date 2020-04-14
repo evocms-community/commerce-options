@@ -7,7 +7,7 @@ class CommerceOptions
 {
     use Commerce\Module\CustomizableFieldsTrait;
 
-    const VERSION = 'v0.1.4';
+    const VERSION = 'v0.1.5';
 
     public $lexicon;
 
@@ -979,7 +979,7 @@ class CommerceOptions
 
         if (!empty($this->eventParams['registerScripts'])) {
             $modx->regClientScript('<script type="text/javascript">
-                var _tvco = ' . json_encode($json, JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK) . ';
+                var _tvco' . $product_id . ' = ' . json_encode($json, JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK) . ';
             </script>');
         }
 
