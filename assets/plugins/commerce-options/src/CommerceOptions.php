@@ -7,7 +7,7 @@ class CommerceOptions
 {
     use Commerce\Module\CustomizableFieldsTrait;
 
-    const VERSION = 'v0.1.5';
+    const VERSION = 'v0.1.6';
 
     public $lexicon;
 
@@ -292,8 +292,7 @@ class CommerceOptions
             }
         }
 
-        $table  = $this->tableValues;
-        $exists = $db->makeArray($db->select('*', $table, "`tmplvar_id` = '" . $params['id'] . "'"), 'id');
+        $table = $this->tableValues;
 
         if (!empty($_POST['tvo_values'])) {
             $columns = $this->getTmplvarColumns();
@@ -315,9 +314,19 @@ class CommerceOptions
 
             $values = $this->sortFields($values);
 
-            $sort = 0;
+            $exists = $db->makeArray($db->select('*', $table, "`tmplvar_id` = '" . $params['id'] . "' AND `id` IN ('" . implode("','", array_column($values, 'id')) . "')"), 'id');
 
             foreach ($values as $row) {
+                if (!empty($row['delete'])) {
+                    if (!empty($row['id']) && isset($exists[$row['id']])) {
+                        $db->delete($table, "`id` = '" . $row['id'] . "'");
+                        $db->delete($this->tableProductValues, "`value_id` = '" . $row['id'] . "'");
+                        unset($exists[$row['id']]);
+                    }
+
+                    continue;
+                }
+
                 $data = [];
 
                 foreach ($rules as $name => $rule) {
@@ -347,18 +356,7 @@ class CommerceOptions
                         'created_at' => date('Y-m-d H:i:s'),
                     ]), $table);
                 }
-
-                $sort += 10;
             }
-        } else {
-            $where = "`tmplvar_id` = '" . intval($params['id']) . "'";
-            $db->delete($this->tableProductValues, $where);
-            $db->delete($this->tableGroupValues, $where);
-            $db->delete($this->tableValues, $where);
-        }
-
-        if (!empty($exists)) {
-            $db->delete($table, "`id` IN (" . implode(',', array_keys($exists)). ")");
         }
     }
 

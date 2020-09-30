@@ -1,6 +1,7 @@
 <tr>
     <td class="move-handler">
         <i class="fa fa-arrows-v"></i>
+        <input type="hidden" name="tvo_values[<?= $iteration ?>][delete]" value="0">
         <?php if (!empty($row['id'])): ?>
             <input type="hidden" name="tvo_values[<?= $iteration ?>][id]" value="<?= $row['id'] ?>">
         <?php endif; ?>
