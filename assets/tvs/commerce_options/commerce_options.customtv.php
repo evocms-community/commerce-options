@@ -4,7 +4,7 @@ if (IN_MANAGER_MODE != 'true') {
     exit;
 }
 
-if (empty($modx->commerce) || !defined('COMMERCE_INITIALIZED')) {
+if (empty($modx->commerce) && !defined('COMMERCE_INITIALIZED')) {
     return 'Commerce plugin required!';
 }
 

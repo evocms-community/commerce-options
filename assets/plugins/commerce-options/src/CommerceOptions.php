@@ -7,7 +7,7 @@ class CommerceOptions
 {
     use Commerce\Module\CustomizableFieldsTrait;
 
-    const VERSION = 'v0.1.6';
+    const VERSION = 'v0.1.7';
 
     public $lexicon;
 

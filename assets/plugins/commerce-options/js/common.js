@@ -5,7 +5,7 @@ var parseTemplate = function(tpl, data) {
         tpl = tpl.replace(new RegExp('\{%' + key + '%\}', 'g'), data[key]);
     }
 
-    return tpl;
+    return $.trim(tpl);
 };
 
 (function($) {
