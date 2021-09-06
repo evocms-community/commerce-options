@@ -22,7 +22,7 @@ $modx->db->query("
         `output_type` enum('radio','checkbox') NOT NULL DEFAULT 'radio',
         `chunk` varchar(255) NOT NULL,
         `efilter_chunk` varchar(255) NOT NULL,
-        `created_at` timestamp NULL DEFAULT '0000-00-00 00:00:00',
+        `created_at` timestamp NULL DEFAULT NULL,
         `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         PRIMARY KEY (`id`),
         KEY `tmplvar_id` (`tmplvar_id`)
@@ -43,7 +43,7 @@ $modx->db->query("
         `fields` mediumtext NOT NULL,
         `meta` mediumtext NOT NULL,
         `sort` int(10) unsigned NOT NULL,
-        `created_at` timestamp NULL DEFAULT '0000-00-00 00:00:00',
+        `created_at` timestamp NULL DEFAULT NULL,
         `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         PRIMARY KEY (`id`),
         KEY `tmplvar_id` (`tmplvar_id`)
@@ -60,7 +60,7 @@ $modx->db->query("
         `amount` float NOT NULL DEFAULT '0',
         `count` float unsigned NOT NULL DEFAULT '1',
         `selected` tinyint(1) unsigned NOT NULL DEFAULT '0',
-        `created_at` timestamp NULL DEFAULT '0000-00-00 00:00:00',
+        `created_at` timestamp NULL DEFAULT NULL,
         `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         PRIMARY KEY (`id`),
         KEY `product_id` (`product_id`),
