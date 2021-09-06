@@ -1,14 +1,15 @@
 ;
 
-var parseTemplate = function(tpl, data) {
-    for (var key in data) {
-        tpl = tpl.replace(new RegExp('\{%' + key + '%\}', 'g'), data[key]);
-    }
-
-    return $.trim(tpl);
-};
 
 (function($) {
+    window.parseTemplate = function(tpl, data) {
+        for (var key in data) {
+            tpl = tpl.replace(new RegExp('\{%' + key + '%\}', 'g'), data[key]);
+        }
+
+        return $.trim(tpl);
+    };
+
     $.fn.updateThumb = function() {
         var $field   = $(this),
             source   = $.trim($field.val());
