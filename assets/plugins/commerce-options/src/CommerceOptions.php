@@ -7,7 +7,7 @@ class CommerceOptions
 {
     use Commerce\Module\CustomizableFieldsTrait;
 
-    const VERSION = 'v0.1.7';
+    const VERSION = 'v0.1.8';
 
     public $lexicon;
 
@@ -112,7 +112,7 @@ class CommerceOptions
 
             $checkedVars = $values = $meta = $required = [];
 
-            $query = $modx->db->query("SELECT pv.id, v.tmplvar_id, v.title AS `value`, pv.modifier, pv.amount
+            $query = $modx->db->query("SELECT pv.id, v.tmplvar_id, v.title AS `value`, v.id AS `value_id`, v.image, pv.modifier, pv.amount
                 FROM {$this->tableProductValues} pv
                 JOIN {$this->tableValues} v ON v.id = pv.value_id
                 WHERE v.tmplvar_id IN ($tv_ids)
@@ -143,6 +143,7 @@ class CommerceOptions
 
                     $tv = $tmplvars[ $value['tmplvar_id'] ];
                     $checkedVars[ $tv['id'] ] = true;
+                    $value['tv'] = $tv;
 
                     if (isset($values[ $tv['id'] ])) {
                         $values[ $tv['id'] ] .= ', ' . $value['value'];
@@ -176,7 +177,7 @@ class CommerceOptions
             if (!empty($values)) {
                 $params['item']['meta']['tvco'] = $meta;
                 $params['item']['price'] = $price;
-                $params['item']['options'] = array_merge($params['item']['options'], $values);
+                $params['item']['options'] = array_merge($params['item']['options'] ?? [], $values);
             }
         }
 
@@ -1123,7 +1124,7 @@ class CommerceOptions
 
                     return [
                         'modifier' => $db->escape($modifier),
-                        'amount'   => !empty($data['amount']) && is_numeric($data['amount']) ? floatval($data['amount']) : '',
+                        'amount'   => !empty($data['amount']) && is_numeric($data['amount']) ? floatval($data['amount']) : '0',
                     ];
                 },
                 'sort' => 30,
