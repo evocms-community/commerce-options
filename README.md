@@ -32,7 +32,7 @@
 
 `containerTpl` - Шаблон контейнера опций.
 ```html
-<div class="tvco" data-tvco-container>
+<div class="tvco" data-tvco-container="[+hash+]" data-product="[+product_id+]">
     [+wrap+]
 </div>
 ```
@@ -46,7 +46,7 @@
 
 `tvTpl` - Шаблон блока опций для одного tv-параметра.
 ```html
-<div class="tvco-var tvco-[+tv.output_type+]" data-tvco-block data-id="[+tv.id+]">
+<div class="tvco-var tvco-[+tv.output_type+]" data-tvco-block="[+hash+]" data-id="[+tv.id+]">
     <div class="tvco-title">[+tv.caption+]</div>
     <ul>
         [+wrap+]
