@@ -6,7 +6,7 @@
  *
  * @category	snippet
  * @author      mnoskov
- * @version     0.1.4
+ * @version     0.1.9
  * @internal	@modx_category Commerce
  * @internal	@installset base
  * @internal	@overwrite true

@@ -3,8 +3,13 @@
 (function($) {
     var CommerceOptions = function(container) {
         this.$container = $(container);
-        this.$blocks    = $('[data-tvco-block="' + container.getAttribute('data-tvco-container') + '"]');
-        this.options    = window['_tvco' + this.$container.attr('data-product')];
+        this.options = window['_tvco' + this.$container.attr('data-product')];
+
+        if (!this.options) {
+            return;
+        }
+
+        this.$blocks = $('[data-tvco-block="' + container.getAttribute('data-tvco-container') + '"]');
 
         container.tvco = this;
         var tvco = this;
