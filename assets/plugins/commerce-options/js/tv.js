@@ -78,6 +78,10 @@ jQuery(function() {
             $(this).closest('tr').addClass('dirty');
         });
 
+        $table.on('click', 'button', function() {
+            $(this).closest('tr').addClass('dirty');
+        });
+
         $('.add-tmplvar-value').click(function(e) {
             e.preventDefault();
 
